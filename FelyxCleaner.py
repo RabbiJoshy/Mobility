@@ -44,7 +44,6 @@ def CollateFelyxDaysInMonth(year, month):
             CollateFelyxDay(directory, days)
 
     return
-
 # CollateFelyxDaysInMonth(year, month)
 
 
@@ -81,5 +80,4 @@ def afewplates(directory, year, month, city = 'Amsterdam', nplates = 25):
 
     subdf.to_pickle(os.path.join(path, city+ str(nplates)))
     return subdf
-
 subb = afewplates(directory, '2023', '03', city = 'Amsterdam')
