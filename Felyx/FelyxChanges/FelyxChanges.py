@@ -3,10 +3,8 @@ import geopandas as gpd
 import os
 from Felyx.FelyxPredictions.FelyxUtils import MakeFelyxGeo
 import pandas as pd
-
 import matplotlib.pyplot as plt
-districts.plot()
-plt.show()
+
 
 Subdistrict = 'Gebieden'
 df = pd.read_pickle('GeoData/Felyx/20230310' + Subdistrict)
@@ -24,6 +22,9 @@ sub['movement'] = sub['Gebied']+ sub['prev_Gebied']
 sub['distancemoved'] = sub.geometry.distance(sub.prev_location)
 
 movers = sub[sub['distancemoved'] > 0.001]
+plates2 = movers['carId'].unique()
+movers.to_pickle('movers')
+
 
 from collections import Counter
 mov = Counter(movers.movement)
