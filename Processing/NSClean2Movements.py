@@ -6,7 +6,7 @@ import os
 
 Gebieden =gpd.read_file('PublicGeoJsons/AmsterdamGebieden.json')
 Stadsdelen = gpd.read_file('PublicGeoJsons/AmsterdamStadsdelen.json')
-df = pd.read_pickle('NS3103sorted')
+df = pd.read_pickle('NSMarchsorted')[:20000]
 geodf = gpd.GeoDataFrame(
     df,
     geometry=gpd.points_from_xy(df.lon, df.lat),
@@ -30,15 +30,21 @@ def bikes_in_number(df):
         totalin[i] = df[df['time'] == i]['num_bikes_available'].sum()
     return totalin
 
-totalb = bikes_in_number(geodf.sjoin(Gebieden, how="inner", predicate='intersects'))
-
-Bikes.to_pickle
 
 
+amsonly = geodf.sjoin(Gebieden, how="inner", predicate='intersects')
+amsonlypart = amsonly[:100000]
+
+totalb = bikes_in_number(amsonly)
+totalbdf = pd.Series(totalb)
+
+totalbdf.to_pickle('availibility')
 
 
 
 
+import requests
+a = requests.get("https://opendata.cbs.nl/ODataApi/OData/83505NED/")
 
 
 

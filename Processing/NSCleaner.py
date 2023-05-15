@@ -5,7 +5,6 @@ import os
 day = '0331'
 
 # NSDataPath = os.path.join('tsn.tno.nl','RA-Data','SV','sv-057767','Feeds','OpenOV','GBFS')
-
 NSDataPath = os.path.join('L:\\UserData\\Joshua\\data\\GBFS\\2023\\03')
 
 print(NSDataPath)
@@ -22,7 +21,6 @@ def fixjsonNS(file, addition = '', replace_gen = True, replace_het = True, repla
     txt = txt.replace(u'\\xa0', u' ')
     txt = txt.replace("True", "true")
     txt = txt.replace("\'", "\"")
-
 
     return txt
 
@@ -90,5 +88,4 @@ for day in os.listdir(NSDataPath):
     # if i != '.DS_Store':
 
 monthsorted = month.sort_values(by = ['station_id', 'time'])
-
 monthsorted.to_pickle('NSMarchSorted')

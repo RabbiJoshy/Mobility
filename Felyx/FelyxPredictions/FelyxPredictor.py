@@ -1,38 +1,43 @@
 import pandas as pd
 import geopandas as gpd
-import os
-from FelyxPredictions.FelyxUtils import MakeFelyxGeo
 import xgboost as xgb
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score
-districts =gpd.read_file('AmsterdamGeoJsons/AmsterdamGebieden.json')
-df = pd.read_pickle(os.path.join(
-    'CleanData', 'Felyx', '2023','03', 'month', 'Amsterdam50'))#.sample
-df = df[['carId', 'fuelLevel', 'time', 'lat', 'lon']]
-geodf = MakeFelyxGeo(df)
-geodf = geodf.sjoin(districts, how="inner", predicate='intersects')
-geodf = geodf[['carId', 'fuelLevel', 'time', 'geometry',
-       'Gebied', 'Stadsdeel']]
-geodf.to_pickle('GeoData/Felyx/Mar23_50')
-
-import pandas as pd
-geodf = pd.read_pickle('GeoData/Felyx/Mar23_50')
-
-# geodf['hour'] = geodf['time'].iloc[0].hour
-period = '30T'
-grouped = geodf.groupby(['Gebied',pd.Grouper(key = 'time', freq= period)]).nunique()['carId'].reset_index()
-grouped.to_pickle(os.path.join('GeoData','Felyx','GroupedMar2023','P50' + period))
+import matplotlib.pyplot as plt
+districts =gpd.read_file('PublicGeoJsons/AmsterdamGebieden.json')
+# df = pd.read_pickle(os.path.join(
+#     'CleanData', 'Felyx', '2023','03', 'month', 'Amsterdam50'))#.sample
+# df = df[['carId', 'fuelLevel', 'time', 'lat', 'lon']]
+# geodf = MakeFelyxGeo(df)
+# geodf = geodf.sjoin(districts, how="inner", predicate='intersects')
+# geodf = geodf[['carId', 'fuelLevel', 'time', 'geometry',
+#        'Gebied', 'Stadsdeel']]
+# geodf.to_pickle('GeoData/Felyx/Mar23_50')
 
 
-geo = pd.read_pickle('GeoData/Felyx/Mar23')
-sub = geo.sample(30000)
-sub['prev_value'] = sub.groupby('carId')['Stadsdeel'].shift()
-sub = sub.dropna()
+df = pd.read_pickle('Change Data/movers')
+
+# fig, ax = plt.subplots()
+# districts.plot(ax = ax, facecolor = "none")
+# df.plot(ax = ax, markersize = df.fuelLevel/10)
+# plt.show()
+
+modeldf = df.copy()
+modeldf['lon'] = modeldf.prev_location.x
+modeldf['lat'] = modeldf.prev_location.y
+
+modeldf['seconds'] = modeldf['prev_time'].dt.second + 60*(modeldf['prev_time'].dt.hour)
+seconds_in_day = 24*60*60
+import numpy as np
+
+modeldf['sin_time'] = np.sin(2*np.pi*modeldf.seconds/seconds_in_day)
+modeldf['cos_time'] = np.cos(2*np.pi*modeldf.seconds/seconds_in_day)
+modeldf.drop('seconds', axis=1, inplace=True)
 
 X_train, X_test, y_train, y_test = train_test_split(
-    sub[['Stadsdeel', 'lat', 'lon']],
-    sub[['prev_value']], test_size=0.33, random_state=42)
+    modeldf[['prev_Gebied', 'lat', 'lon', 'prev_fl', 'sin_time', 'cos_time']],
+    modeldf[['Stadsdeel']], test_size=0.33, random_state=42)
 
 le = LabelEncoder()
 y_train = le.fit_transform(y_train)
@@ -47,6 +52,6 @@ y_pred = clf.predict(X_test)
 
 
 print(accuracy_score(y_test, y_pred))
-predictionDF = pd.DataFrame({'test': y_test, 'pred': y_pred})
-predictionDF['test'].value_counts()
-len(sub[sub['Stadsdeel'] == sub['prev_value']])/len(sub)
+predictionDF = pd.DataFrame({'test': le.inverse_transform(y_test), 'pred': le.inverse_transform(y_pred)})
+predictionDF['pred'].value_counts()
+len(df[df['Gebied'] == df['prev_Gebied']])/len(df)
